@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { mockUsers } from '../utils/mockData.js';
 
 /**
  * Middleware to protect routes - verify JWT token
@@ -16,19 +15,11 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
 
-      // Get user from mock data (in real app, get from database)
-      const user = mockUsers.find(u => u.id === decoded.id);
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'Not authorized, user not found',
-        });
-      }
-
-      // Attach user to request object (exclude password)
-      const { password, ...userWithoutPassword } = user;
-      req.user = userWithoutPassword;
+      // Attach decoded user info to request object
+      req.user = {
+        id: decoded.id,
+        role: decoded.role
+      };
 
       next();
     } catch (error) {

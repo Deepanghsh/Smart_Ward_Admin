@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../components/common/Sidebar';
 import { TopBar } from '../components/common/TopBar';
 import { FileText, Clock, CheckCircle2, Plus } from 'lucide-react';
-import { mockIssues, mockAnnouncements } from '../utils/mockData';
 
 export const AdminDashboard = () => {
   const [issues, setIssues] = useState([]);
@@ -11,7 +10,7 @@ export const AdminDashboard = () => {
   useEffect(() => {
     // Simulate data loading
     setTimeout(() => {
-      setIssues(mockIssues);
+      setIssues([]);
       setLoading(false);
     }, 500);
   }, []);

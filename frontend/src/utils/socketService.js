@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import { showToast } from './toast';
+import { toast } from './toast';
 
 class SocketService {
   constructor() {
@@ -16,7 +16,7 @@ class SocketService {
       return;
     }
 
-    const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
+    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
     this.socket = io(SOCKET_URL, {
       auth: {
@@ -31,7 +31,7 @@ class SocketService {
 
     this.socket.on('connect', () => {
       console.log('✅ Socket connected:', this.socket.id);
-      showToast.success('Real-time connection established');
+      toast.success('Real-time connection established');
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -44,12 +44,12 @@ class SocketService {
 
     this.socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
-      showToast.error('Connection error. Retrying...');
+      toast.error('Connection error. Retrying...');
     });
 
     this.socket.on('reconnect', (attemptNumber) => {
       console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
-      showToast.info('Reconnected successfully');
+      toast.info('Reconnected successfully');
     });
 
     // Listen for real-time events
@@ -62,39 +62,39 @@ class SocketService {
     // Issue-related events
     this.socket.on('issue:created', (data) => {
       console.log('New issue created:', data);
-      showToast.info(`New issue reported: ${data.title}`);
+      toast.info(`New issue reported: ${data.title}`);
       this.emit('issue:created', data);
     });
 
     this.socket.on('issue:updated', (data) => {
       console.log('Issue updated:', data);
-      showToast.info(`Issue updated: ${data.title}`);
+      toast.info(`Issue updated: ${data.title}`);
       this.emit('issue:updated', data);
     });
 
     this.socket.on('issue:assigned', (data) => {
       console.log('Issue assigned:', data);
-      showToast.success(`Issue assigned: ${data.title}`);
+      toast.success(`Issue assigned: ${data.title}`);
       this.emit('issue:assigned', data);
     });
 
     this.socket.on('issue:resolved', (data) => {
       console.log('Issue resolved:', data);
-      showToast.success(`Issue resolved: ${data.title}`);
+      toast.success(`Issue resolved: ${data.title}`);
       this.emit('issue:resolved', data);
     });
 
     // Announcement events
     this.socket.on('announcement:created', (data) => {
       console.log('New announcement:', data);
-      showToast.info(`📢 New announcement: ${data.title}`);
+      toast.info(`📢 New announcement: ${data.title}`);
       this.emit('announcement:created', data);
     });
 
     // Notification events
     this.socket.on('notification', (data) => {
       console.log('Notification received:', data);
-      showToast.info(data.message);
+      toast.info(data.message);
       this.emit('notification', data);
     });
   }

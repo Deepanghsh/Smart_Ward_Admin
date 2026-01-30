@@ -1,53 +1,66 @@
 import bcrypt from 'bcryptjs';
-import { dataHelpers } from '../utils/mockData.js';
-import { generateToken, sanitizeUser } from '../utils/helpers.js';
+import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+
+// In-memory user storage (replace with database in production)
+const users = [];
 
 /**
- * @desc    Register new user
- * @route   POST /api/auth/register
- * @access  Public
+ * @desc Generate JWT token
  */
-const register = async (req, res, next) => {
+const generateToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'your-secret-key', {
+    expiresIn: '30d',
+  });
+};
+
+/**
+ * @desc Register new user
+ * @route POST /api/auth/register
+ * @access Public
+ */
+export const register = async (req, res, next) => {
   try {
-    const { name, email, password, role, hostel, block, room, phone, department, year } = req.body;
+    const { name, email, password, role, roomNumber, hostel } = req.body;
 
     // Check if user already exists
-    const existingUser = dataHelpers.getUserByEmail(email);
-    if (existingUser) {
+    const userExists = users.find((u) => u.email === email);
+    if (userExists) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists',
+        message: 'User already exists with this email',
       });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user object
-    const newUser = {
-      id: `${role === 'admin' ? 'ADM' : 'STU'}${Date.now()}`,
+    // Create user
+    const user = {
+      id: uuidv4(),
       name,
       email,
       password: hashedPassword,
-      role,
-      ...(role === 'student' && { hostel, block, room, year }),
-      phone,
-      department,
-      createdAt: new Date(),
+      role: role || 'student',
+      roomNumber,
+      hostel,
+      createdAt: new Date().toISOString(),
     };
 
-    // In a real app, save to database
-    // For now, we'll just return success with mock data
+    users.push(user);
 
     // Generate token
-    const token = generateToken(newUser.id);
+    const token = generateToken(user.id, user.role);
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
-        accessToken: token,
-        user: sanitizeUser(newUser),
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        token,
       },
     });
   } catch (error) {
@@ -56,43 +69,46 @@ const register = async (req, res, next) => {
 };
 
 /**
- * @desc    Login user
- * @route   POST /api/auth/login
- * @access  Public
+ * @desc Login user
+ * @route POST /api/auth/login
+ * @access Public
  */
-const login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = dataHelpers.getUserByEmail(email);
-
+    // Find user
+    const user = users.find((u) => u.email === email);
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid credentials',
       });
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid credentials',
       });
     }
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
       data: {
-        accessToken: token,
-        user: sanitizeUser(user),
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        roomNumber: user.roomNumber,
+        hostel: user.hostel,
+        token,
       },
     });
   } catch (error) {
@@ -101,33 +117,14 @@ const login = async (req, res, next) => {
 };
 
 /**
- * @desc    Get current user profile
- * @route   GET /api/auth/me
- * @access  Private
+ * @desc Get current user
+ * @route GET /api/auth/me
+ * @access Private
  */
-const getMe = async (req, res, next) => {
+export const getMe = async (req, res, next) => {
   try {
-    res.status(200).json({
-      success: true,
-      data: req.user,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * @desc    Update user profile
- * @route   PUT /api/auth/profile
- * @access  Private
- */
-const updateProfile = async (req, res, next) => {
-  try {
-    const { name, phone, hostel, block, room } = req.body;
-
-    // Get current user
-    const user = dataHelpers.getUserById(req.user.id);
-
+    const user = users.find((u) => u.id === req.user.id);
+    
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -135,22 +132,16 @@ const updateProfile = async (req, res, next) => {
       });
     }
 
-    // Update user data
-    const updatedUser = {
-      ...user,
-      name: name || user.name,
-      phone: phone || user.phone,
-      ...(user.role === 'student' && {
-        hostel: hostel || user.hostel,
-        block: block || user.block,
-        room: room || user.room,
-      }),
-    };
-
     res.status(200).json({
       success: true,
-      message: 'Profile updated successfully',
-      data: sanitizeUser(updatedUser),
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        roomNumber: user.roomNumber,
+        hostel: user.hostel,
+      },
     });
   } catch (error) {
     next(error);
@@ -158,18 +149,55 @@ const updateProfile = async (req, res, next) => {
 };
 
 /**
- * @desc    Change password
- * @route   PUT /api/auth/change-password
- * @access  Private
+ * @desc Update user profile
+ * @route PUT /api/auth/profile
+ * @access Private
  */
-const changePassword = async (req, res, next) => {
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, roomNumber, hostel } = req.body;
+    const userIndex = users.findIndex((u) => u.id === req.user.id);
+
+    if (userIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Update user
+    if (name) users[userIndex].name = name;
+    if (roomNumber) users[userIndex].roomNumber = roomNumber;
+    if (hostel) users[userIndex].hostel = hostel;
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        id: users[userIndex].id,
+        name: users[userIndex].name,
+        email: users[userIndex].email,
+        role: users[userIndex].role,
+        roomNumber: users[userIndex].roomNumber,
+        hostel: users[userIndex].hostel,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc Change password
+ * @route PUT /api/auth/change-password
+ * @access Private
+ */
+export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    const userIndex = users.findIndex((u) => u.id === req.user.id);
 
-    // Get user
-    const user = dataHelpers.getUserById(req.user.id);
-
-    if (!user) {
+    if (userIndex === -1) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
@@ -177,7 +205,10 @@ const changePassword = async (req, res, next) => {
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      users[userIndex].password
+    );
 
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -187,9 +218,8 @@ const changePassword = async (req, res, next) => {
     }
 
     // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    users[userIndex].password = await bcrypt.hash(newPassword, 10);
 
-    // In real app, update password in database
     res.status(200).json({
       success: true,
       message: 'Password changed successfully',
@@ -200,29 +230,26 @@ const changePassword = async (req, res, next) => {
 };
 
 /**
- * @desc    Forgot password
- * @route   POST /api/auth/forgot-password
- * @access  Public
+ * @desc Forgot password
+ * @route POST /api/auth/forgot-password
+ * @access Public
  */
-const forgotPassword = async (req, res, next) => {
+export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-
-    // Find user
-    const user = dataHelpers.getUserByEmail(email);
-
+    
+    const user = users.find((u) => u.email === email);
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'No user found with this email',
+        message: 'User not found',
       });
     }
 
-    // In real app, send password reset email
-    // For now, just return success
+    // In production, send email with reset link
     res.status(200).json({
       success: true,
-      message: 'Password reset instructions sent to your email',
+      message: 'Password reset instructions sent to email',
     });
   } catch (error) {
     next(error);
@@ -230,13 +257,13 @@ const forgotPassword = async (req, res, next) => {
 };
 
 /**
- * @desc    Logout user
- * @route   POST /api/auth/logout
- * @access  Private
+ * @desc Logout user
+ * @route POST /api/auth/logout
+ * @access Private
  */
-const logout = async (req, res, next) => {
+export const logout = async (req, res, next) => {
   try {
-    // In real app with refresh tokens, invalidate token here
+    // In a real app with refresh tokens, you'd invalidate them here
     res.status(200).json({
       success: true,
       message: 'Logged out successfully',
@@ -244,14 +271,4 @@ const logout = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-export {
-  register,
-  login,
-  getMe,
-  updateProfile,
-  changePassword,
-  forgotPassword,
-  logout,
 };

@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { Sidebar } from '../components/common/Sidebar';
 import { TopBar } from '../components/common/TopBar';
 import { Search, Filter, Plus } from 'lucide-react';
-import { mockIssues } from '../utils/mockData';
 
 export const IssuesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const filteredIssues = mockIssues.filter(issue => {
+  const filteredIssues = [].filter(issue => {
     const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          issue.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || issue.status === statusFilter;

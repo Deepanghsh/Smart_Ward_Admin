@@ -1,8 +1,5 @@
 # Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
@@ -10,9 +7,9 @@ pnpm-lock.yaml
 # Environment variables
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.development
+.env.test
+.env.production
 
 # Logs
 logs/
@@ -20,48 +17,10 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 lerna-debug.log*
-pids/
-*.pid
-*.seed
-*.pid.lock
 
-# Runtime data
-lib-cov/
-coverage/
-*.lcov
-.nyc_output/
-.grunt/
-bower_components/
-
-# Testing
-.coverage/
-.cache/
-.parcel-cache/
-.jest/
-
-# Build outputs
-dist/
-build/
-out/
-.next/
-.nuxt/
-.vuepress/dist/
-
-# IDEs and Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-*.sublime-workspace
-*.sublime-project
-.project
-.classpath
-.settings/
-
-# OS Files
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -69,40 +28,42 @@ out/
 .Trashes
 ehthumbs.db
 Thumbs.db
-Desktop.ini
+*~
 
-# Temporary files
-tmp/
-temp/
-*.tmp
-*.temp
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
 
-# Upload directories (if you add file upload functionality)
+# Build
+dist/
+build/
+out/
+.cache/
+
+# Uploads (when file upload is added)
 uploads/
-public/uploads/
+temp/
+tmp/
 
-# Database files (if using local DB)
+# Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Database files
 *.sqlite
-*.sqlite3
 *.db
-
-# MongoDB
 data/
-dump/
-
-# Redis
-dump.rdb
 
 # PM2
 .pm2/
-
-# Docker
-.dockerignore
-docker-compose.override.yml
-
-# Misc
-.cache/
-.vscode-test/
-.history/
-*.bak
-*.backup

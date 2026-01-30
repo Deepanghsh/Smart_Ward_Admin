@@ -1,79 +1,23 @@
-import { dataHelpers } from '../utils/mockData.js';
-import { paginate, sortData, searchData, filterByDateRange } from '../utils/helpers.js';
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * @desc    Get all announcements
- * @route   GET /api/announcements
- * @access  Private
- */
-const getAnnouncements = async (req, res, next) => {
+const announcements = [];
+
+export const getAnnouncements = async (req, res, next) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      priority,
-      hostel,
-      search,
-      startDate,
-      endDate,
-      sortBy = 'date',
-      order = 'desc',
-    } = req.query;
-
-    let announcements = dataHelpers.getAllAnnouncements();
-
-    // Filter by hostel if user is student
-    if (req.user.role === 'student' && req.user.hostel) {
-      announcements = announcements.filter(
-        ann => ann.hostel === 'All Hostels' || ann.hostel.includes(req.user.hostel)
-      );
-    }
-
-    // Apply filters
-    if (priority) {
-      announcements = announcements.filter(ann => ann.priority === priority);
-    }
-
-    if (hostel) {
-      announcements = announcements.filter(ann => 
-        ann.hostel === 'All Hostels' || ann.hostel.includes(hostel)
-      );
-    }
-
-    // Date range filter
-    if (startDate || endDate) {
-      announcements = filterByDateRange(announcements, 'date', startDate, endDate);
-    }
-
-    // Search
-    if (search) {
-      announcements = searchData(announcements, search, ['title', 'content', 'author']);
-    }
-
-    // Sort
-    announcements = sortData(announcements, sortBy, order);
-
-    // Paginate
-    const result = paginate(announcements, page, limit);
-
     res.status(200).json({
       success: true,
-      ...result,
+      count: announcements.length,
+      data: announcements,
     });
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * @desc    Get single announcement
- * @route   GET /api/announcements/:id
- * @access  Private
- */
-const getAnnouncementById = async (req, res, next) => {
+export const getAnnouncementById = async (req, res, next) => {
   try {
-    const announcement = dataHelpers.getAnnouncementById(req.params.id);
-
+    const announcement = announcements.find(a => a.id === req.params.id);
+    
     if (!announcement) {
       return res.status(404).json({
         success: false,
@@ -90,102 +34,75 @@ const getAnnouncementById = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Create new announcement
- * @route   POST /api/announcements
- * @access  Private (Admin only)
- */
-const createAnnouncement = async (req, res, next) => {
+export const createAnnouncement = async (req, res, next) => {
   try {
-    const { title, content, priority, hostel, type } = req.body;
+    const { title, content, priority } = req.body;
 
-    const announcementData = {
+    const announcement = {
+      id: uuidv4(),
       title,
       content,
-      priority,
-      hostel,
-      type: type || 'general',
-      authorId: req.user.id,
-      author: req.user.name,
+      priority: priority || 'normal',
+      createdBy: req.user.id,
+      createdAt: new Date().toISOString(),
     };
 
-    const newAnnouncement = dataHelpers.createAnnouncement(announcementData);
+    announcements.push(announcement);
 
-    // Emit socket event
     const io = req.app.get('io');
-    io.emit('announcement:created', newAnnouncement);
+    if (io) {
+      io.emit('newAnnouncement', announcement);
+    }
 
     res.status(201).json({
       success: true,
       message: 'Announcement created successfully',
-      data: newAnnouncement,
+      data: announcement,
     });
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * @desc    Update announcement
- * @route   PUT /api/announcements/:id
- * @access  Private (Admin only)
- */
-const updateAnnouncement = async (req, res, next) => {
+export const updateAnnouncement = async (req, res, next) => {
   try {
-    const { title, content, priority, hostel, type } = req.body;
+    const index = announcements.findIndex(a => a.id === req.params.id);
 
-    const announcement = dataHelpers.getAnnouncementById(req.params.id);
-
-    if (!announcement) {
+    if (index === -1) {
       return res.status(404).json({
         success: false,
         message: 'Announcement not found',
       });
     }
 
-    const updatedAnnouncement = dataHelpers.updateAnnouncement(req.params.id, {
-      title: title || announcement.title,
-      content: content || announcement.content,
-      priority: priority || announcement.priority,
-      hostel: hostel || announcement.hostel,
-      type: type || announcement.type,
-    });
-
-    // Emit socket event
-    const io = req.app.get('io');
-    io.emit('announcement:updated', updatedAnnouncement);
+    const { title, content, priority } = req.body;
+    if (title) announcements[index].title = title;
+    if (content) announcements[index].content = content;
+    if (priority) announcements[index].priority = priority;
+    announcements[index].updatedAt = new Date().toISOString();
 
     res.status(200).json({
       success: true,
       message: 'Announcement updated successfully',
-      data: updatedAnnouncement,
+      data: announcements[index],
     });
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * @desc    Delete announcement
- * @route   DELETE /api/announcements/:id
- * @access  Private (Admin only)
- */
-const deleteAnnouncement = async (req, res, next) => {
+export const deleteAnnouncement = async (req, res, next) => {
   try {
-    const announcement = dataHelpers.getAnnouncementById(req.params.id);
+    const index = announcements.findIndex(a => a.id === req.params.id);
 
-    if (!announcement) {
+    if (index === -1) {
       return res.status(404).json({
         success: false,
         message: 'Announcement not found',
       });
     }
 
-    dataHelpers.deleteAnnouncement(req.params.id);
-
-    // Emit socket event
-    const io = req.app.get('io');
-    io.emit('announcement:deleted', { announcementId: req.params.id });
+    announcements.splice(index, 1);
 
     res.status(200).json({
       success: true,
@@ -194,12 +111,4 @@ const deleteAnnouncement = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-export {
-  getAnnouncements,
-  getAnnouncementById,
-  createAnnouncement,
-  updateAnnouncement,
-  deleteAnnouncement,
 };

@@ -5,7 +5,6 @@ import { CategoryChart } from '../components/charts/CategoryChart';
 import { TrendChart } from '../components/charts/TrendChart';
 import { PieChart } from '../components/charts/PieChart';
 import { AlertCircle, CheckCircle2, Clock, TrendingUp, Download } from 'lucide-react';
-import { mockAnalytics, mockIssues } from '../utils/mockData';
 import { exportToExcel } from '../utils/dataUtils';
 import { toast } from '../utils/toast';
 
@@ -15,13 +14,13 @@ export const ManagementDashboard = () => {
 
   useEffect(() => {
     setTimeout(() => {
-      setAnalytics(mockAnalytics);
+      setAnalytics({});
       setLoading(false);
     }, 800);
   }, []);
 
   const handleExportData = () => {
-    const exportData = mockIssues.map(issue => ({
+    const exportData = [].map(issue => ({
       'Issue ID': issue.id,
       'Title': issue.title,
       'Category': issue.category,

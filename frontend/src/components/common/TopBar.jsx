@@ -1,149 +1,100 @@
 import React, { useState } from 'react';
-import { Bell, Calendar, User, Settings, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { getCurrentUser } from '../../utils/apiUtils';
+import { Bell, Search, Moon, Sun, User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { getCurrentUser, logout } from '../../utils/apiUtils';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export const TopBar = ({ title, subtitle }) => {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const user = getCurrentUser();
+  const { isDark, toggleTheme } = useTheme();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
 
-  const getCurrentDate = () => {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date().toLocaleDateString('en-US', options);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('accesstoken');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
+  const notifications = [
+    { id: 1, title: 'New Issue', message: 'Room 204 reported a plumbing issue.', time: '5m ago' },
+    { id: 2, title: 'Notice', message: 'The canteen will be closed this Sunday.', time: '2h ago' }
+  ];
 
   return (
-    <div className="bg-white border-b border-gray-200 px-8 py-6">
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-8 py-4 sticky top-0 z-40 transition-colors duration-200">
       <div className="flex items-center justify-between">
-        {/* Left Section - Welcome Message */}
         <div>
-          <p className="text-gray-600 text-sm mb-1">
-            Welcome, {user?.name || 'Admin'}
-          </p>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-            {title || 'Good Morning, John!'} 👋
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {title || `Welcome, ${user?.name || 'Admin'}! 👋`}
           </h1>
-          <p className="text-gray-500">
-            {subtitle || "Here's what's happening in your hostel today."}
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {subtitle || "Here's the latest hostel activity."}
           </p>
         </div>
 
-        {/* Right Section - Date, Notifications, Profile */}
         <div className="flex items-center gap-4">
-          {/* Date */}
-          <div className="flex items-center gap-2 text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
-            <Calendar className="w-4 h-4" />
-            <span className="text-sm font-medium">{getCurrentDate()}</span>
-          </div>
+          {/* Theme Toggle */}
+          <button onClick={toggleTheme} className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
+            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
 
-          {/* Notifications */}
+          {/* Notifications Toggle */}
           <div className="relative">
-            <button
+            <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+              className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                3
-              </span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
             </button>
 
-            {/* Notifications Dropdown */}
             {showNotifications && (
               <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowNotifications(false)}
-                />
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-20 overflow-hidden">
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 z-20">
+                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-sm">Notifications</h3>
+                    <button className="text-xs text-blue-600 hover:underline">Clear All</button>
                   </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    <div className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">New issue reported</p>
-                      <p className="text-xs text-gray-500 mt-1">Water leaking in bathroom</p>
-                      <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
-                    </div>
-                    <div className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">Issue resolved</p>
-                      <p className="text-xs text-gray-500 mt-1">Power failure in Block A</p>
-                      <p className="text-xs text-gray-400 mt-1">5 hours ago</p>
-                    </div>
-                    <div className="p-4 hover:bg-gray-50 cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">Maintenance scheduled</p>
-                      <p className="text-xs text-gray-500 mt-1">Water supply maintenance tomorrow</p>
-                      <p className="text-xs text-gray-400 mt-1">1 day ago</p>
-                    </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.map((n) => (
+                      <div key={n.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{n.title}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{n.message}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>
             )}
           </div>
 
-          {/* User Profile */}
+          {/* User Menu Trigger */}
           <div className="relative">
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <div className="w-8 h-8 bg-white text-blue-600 rounded-lg flex items-center justify-center font-bold">
-                {user?.name?.[0]?.toUpperCase() || 'JD'}
+            <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-3 p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                {user?.name?.charAt(0) || 'A'}
               </div>
-              <span className="font-semibold hidden lg:block">
-                {user?.name?.split(' ').map(n => n[0]).join('') || 'JD'}
-              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Profile Dropdown */}
-            {showProfileMenu && (
+            {showUserMenu && (
               <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowProfileMenu(false)}
-                />
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-20 overflow-hidden">
-                  <div className="p-4 border-b border-gray-200">
-                    <p className="font-semibold text-gray-900">{user?.name || 'Admin User'}</p>
-                    <p className="text-xs text-gray-500">{user?.email || 'admin@smarthostel.com'}</p>
+                <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 z-20">
+                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{user?.name || 'Admin'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role || 'Hostel Warden'}</p>
                   </div>
-                  <div className="py-2">
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        navigate('/admin/profile');
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  <Link to="/admin/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <User className="w-4 h-4" /> My Profile
+                  </Link>
+                  <Link to="/admin/settings" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <Settings className="w-4 h-4" /> Settings
+                  </Link>
+                  <div className="border-t border-gray-100 dark:border-gray-700 mt-2 pt-2">
+                    <button 
+                      onClick={() => { logout(); navigate('/login'); }} 
+                      className="flex items-center gap-3 px-4 py-2.5 w-full text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >
-                      <User className="w-4 h-4" />
-                      <span className="text-sm font-medium">My Profile</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowProfileMenu(false);
-                        navigate('/admin/settings');
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span className="text-sm font-medium">Settings</span>
-                    </button>
-                  </div>
-                  <div className="border-t border-gray-200 py-2">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors text-left"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span className="text-sm font-medium">Sign Out</span>
+                      <LogOut className="w-4 h-4" /> Logout
                     </button>
                   </div>
                 </div>

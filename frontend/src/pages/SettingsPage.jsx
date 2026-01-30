@@ -3,8 +3,11 @@ import { Sidebar } from '../components/common/Sidebar';
 import { TopBar } from '../components/common/TopBar';
 import { Bell, Lock, Globe, Moon, Shield, Database, Mail, Smartphone } from 'lucide-react';
 import { toast } from '../utils/toast';
+import { useTheme } from '../contexts/ThemeContext';
 
 export const SettingsPage = () => {
+  const { theme, toggleTheme, isDark } = useTheme();
+  
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
@@ -14,7 +17,6 @@ export const SettingsPage = () => {
     weeklyReports: true,
     twoFactorAuth: false,
     sessionTimeout: '30',
-    darkMode: false,
     language: 'en',
     timezone: 'Asia/Kolkata',
     autoAssignment: true,
@@ -22,11 +24,16 @@ export const SettingsPage = () => {
   });
 
   const handleToggle = (key) => {
-    setSettings({
-      ...settings,
-      [key]: !settings[key],
-    });
-    toast.success('Setting updated successfully');
+    if (key === 'darkMode') {
+      toggleTheme();
+      toast.success('Theme updated successfully');
+    } else {
+      setSettings({
+        ...settings,
+        [key]: !settings[key],
+      });
+      toast.success('Setting updated successfully');
+    }
   };
 
   const handleSelectChange = (key, value) => {
@@ -113,6 +120,7 @@ export const SettingsPage = () => {
           label: 'Dark Mode',
           description: 'Use dark theme',
           type: 'toggle',
+          value: isDark,
         },
         {
           key: 'language',
@@ -159,52 +167,52 @@ export const SettingsPage = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
       
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-64 overflow-auto">
         <TopBar />
         
         <div className="p-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-            <p className="text-gray-600">Manage your account preferences and system settings</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Settings</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage your account preferences and system settings</p>
           </div>
 
           <div className="max-w-4xl space-y-6">
             {settingsSections.map((section, sectionIndex) => {
               const Icon = section.icon;
               return (
-                <div key={sectionIndex} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+                <div key={sectionIndex} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3">
-                      <Icon className="w-5 h-5 text-blue-600" />
-                      <h2 className="text-lg font-bold text-gray-900">{section.title}</h2>
+                      <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">{section.title}</h2>
                     </div>
                   </div>
                   
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
                     {section.items.map((item, itemIndex) => (
                       <div key={itemIndex} className="p-6">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="text-base font-semibold text-gray-900 mb-1">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
                               {item.label}
                             </h3>
-                            <p className="text-sm text-gray-600">{item.description}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
                           </div>
                           
                           {item.type === 'toggle' && (
                             <button
                               onClick={() => handleToggle(item.key)}
                               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                settings[item.key] ? 'bg-blue-600' : 'bg-gray-300'
+                                (item.key === 'darkMode' ? isDark : settings[item.key]) ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
                               }`}
                             >
                               <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                  settings[item.key] ? 'translate-x-6' : 'translate-x-1'
+                                  (item.key === 'darkMode' ? isDark : settings[item.key]) ? 'translate-x-6' : 'translate-x-1'
                                 }`}
                               />
                             </button>
@@ -214,7 +222,7 @@ export const SettingsPage = () => {
                             <select
                               value={settings[item.key]}
                               onChange={(e) => handleSelectChange(item.key, e.target.value)}
-                              className="ml-4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                              className="ml-4 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             >
                               {item.options.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -232,26 +240,26 @@ export const SettingsPage = () => {
             })}
 
             {/* Account Actions */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-6">Account Actions</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Account Actions</h2>
               <div className="space-y-4">
-                <button className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <button className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex items-center gap-3">
-                    <Lock className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium text-gray-900">Change Password</span>
+                    <Lock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <span className="font-medium text-gray-900 dark:text-white">Change Password</span>
                   </div>
                   <span className="text-gray-400">→</span>
                 </button>
                 
-                <button className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <button className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex items-center gap-3">
-                    <Database className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium text-gray-900">Export Data</span>
+                    <Database className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <span className="font-medium text-gray-900 dark:text-white">Export Data</span>
                   </div>
                   <span className="text-gray-400">→</span>
                 </button>
                 
-                <button className="w-full flex items-center justify-between px-4 py-3 border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-red-600">
+                <button className="w-full flex items-center justify-between px-4 py-3 border border-red-300 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-600 dark:text-red-400">
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5" />
                     <span className="font-medium">Delete Account</span>
@@ -263,7 +271,7 @@ export const SettingsPage = () => {
 
             {/* Save Button */}
             <div className="flex justify-end gap-3">
-              <button className="px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+              <button className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 Reset to Defaults
               </button>
               <button 

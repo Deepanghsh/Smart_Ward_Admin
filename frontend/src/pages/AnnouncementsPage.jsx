@@ -1,11 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../components/common/Sidebar';
 import { TopBar } from '../components/common/TopBar';
 import { Plus, Bell, Calendar, Users } from 'lucide-react';
-import { mockAnnouncements } from '../utils/mockData';
+import announcementService from '../services/announcementService';
+import { toast } from '../utils/toast';
 
 export const AnnouncementsPage = () => {
-  const [announcements] = useState(mockAnnouncements);
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const fetchAnnouncements = async () => {
+    try {
+      setLoading(true);
+      const response = await announcementService.getAnnouncements();
+      
+      if (response.success) {
+        setAnnouncements(response.data || []);
+      } else {
+        toast.error(response.message || 'Failed to load announcements');
+        setAnnouncements([]);
+      }
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+      toast.error('Failed to load announcements');
+      setAnnouncements([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getPriorityColor = (priority) => {
     const colors = {
@@ -30,11 +56,25 @@ export const AnnouncementsPage = () => {
     return `${diffDays}d ago`;
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 ml-64 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading announcements...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-64 overflow-auto">
         <TopBar />
         
         <div className="p-8">
@@ -89,50 +129,60 @@ export const AnnouncementsPage = () => {
                 {announcements.filter(a => {
                   const weekAgo = new Date();
                   weekAgo.setDate(weekAgo.getDate() - 7);
-                  return new Date(a.date) >= weekAgo;
+                  return new Date(a.createdAt || a.date) >= weekAgo;
                 }).length}
               </div>
             </div>
           </div>
 
           {/* Announcements List */}
-          <div className="space-y-4">
-            {announcements.map((announcement) => (
-              <div 
-                key={announcement.id} 
-                className={`bg-white rounded-xl border-2 p-6 hover:shadow-lg transition-all ${getPriorityColor(announcement.priority)}`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(announcement.priority)}`}>
-                        {announcement.priority.toUpperCase()}
-                      </span>
-                      <span className="text-sm text-gray-500">{getTimeAgo(announcement.date)}</span>
+          {announcements.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Announcements Yet</h3>
+              <p className="text-gray-600">Check back later for important updates and notices.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {announcements.map((announcement) => (
+                <div 
+                  key={announcement.id} 
+                  className={`bg-white rounded-xl border-2 p-6 hover:shadow-lg transition-all ${getPriorityColor(announcement.priority)}`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(announcement.priority)}`}>
+                          {announcement.priority?.toUpperCase() || 'NORMAL'}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {getTimeAgo(announcement.createdAt || announcement.date)}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{announcement.title}</h3>
+                      <p className="text-gray-700 leading-relaxed">{announcement.content}</p>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{announcement.title}</h3>
-                    <p className="text-gray-700 leading-relaxed">{announcement.content}</p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Target: {announcement.target || 'All Students'}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Posted: {new Date(announcement.createdAt || announcement.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors">
+                      Edit
+                    </button>
                   </div>
                 </div>
-                
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <span className="flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      Target: {announcement.target}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Posted: {new Date(announcement.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors">
-                    Edit
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,119 +1,66 @@
 #!/bin/bash
 
-# SmartHostel Setup Script
-# This script helps set up both frontend and backend
-
-echo "🏢 SmartHostel - Complete Setup Script"
-echo "======================================"
+# Smart Hostel Setup Script
+echo "🏢 Smart Hostel Management System - Setup"
+echo "=========================================="
 echo ""
 
 # Colors for output
-RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
-    echo -e "${RED}❌ Node.js is not installed!${NC}"
-    echo "Please install Node.js (v18 or higher) from https://nodejs.org/"
+    echo -e "${RED}❌ Node.js is not installed${NC}"
+    echo "Please install Node.js from https://nodejs.org/"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Node.js installed:${NC} $(node --version)"
+echo -e "${GREEN}✅ Node.js version: $(node -v)${NC}"
+echo -e "${GREEN}✅ npm version: $(npm -v)${NC}"
 echo ""
 
-# Setup Backend
-echo "📦 Setting up Backend..."
-echo "------------------------"
-
-cd backend || exit
-
-# Check if node_modules exists
-if [ ! -d "node_modules" ]; then
-    echo "Installing backend dependencies..."
-    npm install
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Backend dependencies installed${NC}"
-    else
-        echo -e "${RED}❌ Failed to install backend dependencies${NC}"
-        exit 1
-    fi
-else
-    echo -e "${YELLOW}⚠️  Backend dependencies already installed${NC}"
+# Install backend dependencies
+echo -e "${BLUE}📦 Installing backend dependencies...${NC}"
+cd backend
+npm install
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Backend installation failed${NC}"
+    exit 1
 fi
+echo -e "${GREEN}✅ Backend dependencies installed${NC}"
+echo ""
 
-# Create .env if it doesn't exist
-if [ ! -f ".env" ]; then
-    echo "Creating backend .env file..."
-    cp .env.example .env
-    echo -e "${GREEN}✅ Created backend .env file${NC}"
-    echo -e "${YELLOW}⚠️  Please update .env with your configuration${NC}"
-else
-    echo -e "${YELLOW}⚠️  Backend .env already exists${NC}"
+# Install frontend dependencies
+echo -e "${BLUE}📦 Installing frontend dependencies...${NC}"
+cd ../frontend
+npm install
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Frontend installation failed${NC}"
+    exit 1
 fi
-
-cd ..
+echo -e "${GREEN}✅ Frontend dependencies installed${NC}"
 echo ""
 
-# Setup Frontend
-echo "🎨 Setting up Frontend..."
-echo "------------------------"
-
-cd frontend || exit
-
-# Check if node_modules exists
-if [ ! -d "node_modules" ]; then
-    echo "Installing frontend dependencies..."
-    npm install
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Frontend dependencies installed${NC}"
-    else
-        echo -e "${RED}❌ Failed to install frontend dependencies${NC}"
-        exit 1
-    fi
-else
-    echo -e "${YELLOW}⚠️  Frontend dependencies already installed${NC}"
-fi
-
-# Create .env if it doesn't exist
-if [ ! -f ".env" ]; then
-    echo "Creating frontend .env file..."
-    cp .env.example .env
-    echo -e "${GREEN}✅ Created frontend .env file${NC}"
-else
-    echo -e "${YELLOW}⚠️  Frontend .env already exists${NC}"
-fi
-
-cd ..
+# Setup complete
+echo -e "${GREEN}=========================================="
+echo "✅ Setup Complete!"
+echo "==========================================${NC}"
 echo ""
-
-# Summary
-echo "======================================"
-echo -e "${GREEN}🎉 Setup Complete!${NC}"
-echo "======================================"
+echo -e "${BLUE}To start the application:${NC}"
 echo ""
-echo "📝 Next Steps:"
+echo "Terminal 1 (Backend):"
+echo "  cd backend"
+echo "  npm run dev"
 echo ""
-echo "1. Start Backend:"
-echo "   cd backend && npm run dev"
+echo "Terminal 2 (Frontend):"
+echo "  cd frontend"
+echo "  npm run dev"
 echo ""
-echo "2. Start Frontend (in new terminal):"
-echo "   cd frontend && npm run dev"
+echo -e "${BLUE}The application will be available at:${NC}"
+echo "  Frontend: http://localhost:5173"
+echo "  Backend:  http://localhost:5000"
 echo ""
-echo "3. Access the application:"
-echo "   Frontend: http://localhost:5173"
-echo "   Backend:  http://localhost:5000"
-echo ""
-echo "🔑 Default Test Accounts:"
-echo ""
-echo "Admin:"
-echo "  Email: admin@smarthostel.com"
-echo "  Password: admin123"
-echo ""
-echo "Student:"
-echo "  Email: rahul@university.edu"
-echo "  Password: student123"
-echo ""
-echo -e "${YELLOW}⚠️  Remember to update .env files with your configuration!${NC}"
-echo ""
+echo -e "${GREEN}Happy coding! 🚀${NC}"
